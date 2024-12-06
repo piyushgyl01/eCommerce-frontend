@@ -5,12 +5,10 @@ import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
 
-
 export default function Homepage() {
   return (
     <>
       <div className=" py-4 bg-black" id="ehhe">
-
         <main className="container py-4">
           <Swiper
             spaceBetween={30}
