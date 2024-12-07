@@ -4,12 +4,14 @@ import { Autoplay, Pagination, Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
+import { Link } from "react-router-dom";
 
 export default function Homepage() {
   return (
     <>
       <div className=" py-4 bg-black" id="ehhe">
         <main className="container py-4">
+          <Link to="/products">
           <Swiper
             spaceBetween={30}
             centeredSlides={true}
@@ -45,7 +47,22 @@ export default function Homepage() {
                 alt="New Arrivals"
               />
             </SwiperSlide>
+            <SwiperSlide>
+              <img
+                className="img-fluid rounded w-100"
+                src="https://hoyo.global/wp-content/uploads/2023/07/klee-impression-banner-official-merch-genshin.webp"
+                alt="Men's Category"
+              />
+            </SwiperSlide>
+            <SwiperSlide>
+              <img
+                className="img-fluid rounded w-100"
+                src="https://hoyo.global/wp-content/uploads/2023/06/ganyu-impression-banner-official-merch-genshin.webp"
+                alt="Men's Category"
+              />
+            </SwiperSlide>
           </Swiper>
+          </Link>
           <div className="row">
             <h1 className="text-center text-light display-6  pt-4">
               Choose from a category
