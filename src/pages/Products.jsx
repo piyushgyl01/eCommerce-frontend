@@ -21,7 +21,7 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import { Link } from "react-router-dom";
 
 const MAX = 300;
-const MIN = 0;
+const MIN = 0; 
 const marks = [
   {
     value: MIN,
