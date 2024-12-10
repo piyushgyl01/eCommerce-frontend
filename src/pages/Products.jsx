@@ -14,14 +14,17 @@ import RadioGroup from "@mui/material/RadioGroup";
 import Card from "@mui/material/Card";
 import CardMedia from "@mui/material/CardMedia";
 import CardContent from "@mui/material/CardContent";
-import FavoriteIcon from "@mui/icons-material/Favorite";
 import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import { Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import CircularProgress from "@mui/material/CircularProgress";
 
 const MAX = 300;
-const MIN = 0; 
+const MIN = 0;
 const marks = [
   {
     value: MIN,
@@ -34,12 +37,19 @@ const marks = [
 ];
 
 export default function Products() {
+  const navigate = useNavigate(); // Add this hook
+  const [filter, setFilter] = useState(false);
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const category = params.get("category");
+
   const [val, setVal] = React.useState(MIN);
   const [state, setState] = React.useState({
-    gilad: false,
-    jason: false,
+    men: false,
+    women: false,
   });
-  const [sortValue, setSortValue] = React.useState("lowToHigh"); // State for sort by
+  const [sortValue, setSortValue] = React.useState("lowToHigh");
+  const [ratingValue, setRatingValue] = useState(0)
 
   // Slider value change handler
   const handleSliderChange = (_, newValue) => {
@@ -54,17 +64,133 @@ export default function Products() {
     });
   };
 
+  const handleRatingChange = (event) => {
+    setRatingValue(event.target.value)
+  }
+
   // Sort by change handler
   const handleSortChange = (event) => {
     setSortValue(event.target.value);
   };
 
-  const { gilad, jason } = state;
-  const errore = [gilad, jason].filter((v) => v).length !== 2;
+  const { men, women } = state;
+  const errore = [men, women].filter((v) => v).length !== 2;
 
-  const { data, error, loading } = useFetch(
-    "https://e-commerce-backend-two-mu.vercel.app/products"
-  );
+  // Dynamic URL based on sort value
+  // const getProductUrl = () => {
+  //   const baseUrl = "https://e-commerce-backend-two-mu.vercel.app";
+  //   switch(sortValue) {
+  //     case "lowToHigh":
+  //       return `${baseUrl}/products/sort/price-asc`;
+  //     case "highToLow":
+  //       return `${baseUrl}/products/sort/price-desc`;
+  //     default:
+  //       return `${baseUrl}/products`;
+  //   }
+  // };
+
+  const getProductUrl = () => {
+    const baseUrl = "https://e-commerce-backend-two-mu.vercel.app";
+
+    if (val > MIN) {
+      return `${baseUrl}/products/prices/${val}`;
+    }
+
+    if (ratingValue) {
+      return `${baseUrl}/products/ratings/${ratingValue}`;
+    }
+  
+
+    if (filter) {
+      return `${baseUrl}/products`;
+    } else {
+      if (men && !women) {
+        return `${baseUrl}/products/categories/Men`;
+      } else if (women && !men) {
+        return `${baseUrl}/products/categories/Women`;
+      }
+      else if (category) {
+        return `${baseUrl}/products/categories/${category}`;
+      } else {
+        switch (sortValue) {
+          case "lowToHigh":
+            return `${baseUrl}/products/sort/price-asc`;
+          case "highToLow":
+            return `${baseUrl}/products/sort/price-desc`;
+          default:
+            return `${baseUrl}/products`;
+        }
+      }
+    }
+  };
+
+  const handleClearFilters = () => {
+    setFilter(true);
+    setVal(MIN);
+    setState({ men: false, women: false });
+    setSortValue("lowToHigh");
+    setRatingValue(0)
+    navigate('/products');
+  };
+
+
+  // const getProductUrl = () => {
+  //   const baseUrl = "https://e-commerce-backend-two-mu.vercel.app";
+  //   if (men && !women) {
+  //     return `${baseUrl}/products/categories/Men`;
+  //   } else if (women && !men) {
+  //     return `${baseUrl}/products/categories/Women`;
+  //   } else {
+  //     switch (sortValue) {
+  //       case "lowToHigh":
+  //         return `${baseUrl}/products/sort/price-asc`;
+  //       case "highToLow":
+  //         return `${baseUrl}/products/sort/price-desc`;
+  //       default:
+  //         return `${baseUrl}/products`;
+  //     }
+  //   }
+  // };
+
+
+  // const getProductUrl = () => {
+  //   const baseUrl = "https://e-commerce-backend-two-mu.vercel.app";
+  //   if (men && !women) {
+  //     return `${baseUrl}/products/categories/Men`;
+  //   } else if (women && !men) {
+  //     return `${baseUrl}/products/categories/Women`;
+  //   } else if (val){
+  //     return `${baseUrl}/products/prices/${val}`
+  //   }else {
+  //     switch (sortValue) {
+  //       case "lowToHigh":
+  //         return `${baseUrl}/products/sort/price-asc`;
+  //       case "highToLow":
+  //         return `${baseUrl}/products/sort/price-desc`;
+  //       default:
+  //         return `${baseUrl}/products`;
+  //     }
+  //   }
+  // };
+
+  
+  // Use useFetch with dynamic URL
+  const { data, error, loading } = useFetch(getProductUrl());
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "80vh", // Adjust the height as needed
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }  if (error) return <div>Error: {error}</div>;
 
   return (
     <>
@@ -73,8 +199,28 @@ export default function Products() {
         <div className="row ">
           <div className="col-md-3 ">
             <div>
-              <h4>Filters</h4>
-              <p>Clear</p>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 2,
+                }}
+              >
+                <h4>Filters</h4>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    cursor: "pointer",
+                    color: "blue",
+                    textDecoration: "underline",
+                    fontWeight: "bold",
+                  }}
+                  onClick={handleClearFilters}
+                >
+                  Clear
+                </Typography>
+              </Box>
             </div>
             <div>
               <h4>Price</h4>
@@ -120,7 +266,7 @@ export default function Products() {
                     <FormControlLabel
                       control={
                         <Checkbox
-                          checked={gilad}
+                          checked={men}
                           onChange={handleCheckboxChange}
                           name="men"
                         />
@@ -130,7 +276,7 @@ export default function Products() {
                     <FormControlLabel
                       control={
                         <Checkbox
-                          checked={jason}
+                          checked={women}
                           onChange={handleCheckboxChange}
                           name="women"
                         />
@@ -157,26 +303,27 @@ export default function Products() {
                 </FormLabel>
                 <RadioGroup
                   aria-labelledby="rating-label"
-                  defaultValue="4stars"
+                  value={ratingValue || ""}
                   name="rating"
+                  onChange={handleRatingChange}
                 >
                   <FormControlLabel
-                    value="4stars"
+                    value={4}
                     control={<Radio />}
                     label="4 Stars & above"
                   />
                   <FormControlLabel
-                    value="3stars"
+                    value={3}
                     control={<Radio />}
                     label="3 Stars & above"
                   />
                   <FormControlLabel
-                    value="2stars"
+                    value={2}
                     control={<Radio />}
                     label="2 Stars & above"
                   />
                   <FormControlLabel
-                    value="1stars"
+                    value={1}
                     control={<Radio />}
                     label="1 Stars & above"
                   />
@@ -242,7 +389,7 @@ export default function Products() {
                         <CardMedia
                           component="img"
                           height="300"
-                          image={product.productImg} // Replace with actual image
+                          image={product.productImg}
                           alt="https://via.placeholder.com/300"
                         />
                       </Link>
