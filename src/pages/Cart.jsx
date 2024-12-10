@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from "../Components/Header";
 import useFetch from "../useFetch";
 
@@ -11,13 +12,120 @@ import ButtonGroup from "@mui/material/ButtonGroup";
 import CircularProgress from "@mui/material/CircularProgress";
 import Paper from "@mui/material/Paper";
 import Divider from "@mui/material/Divider";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
 
 // MUI Icons
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 
 export default function Cart() {
-    const { data: cartItems, loading, error } = useFetch("https://e-commerce-backend-two-mu.vercel.app/products/inCart");
+    const navigate = useNavigate();
+    const [loadingStates, setLoadingStates] = useState({});
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        message: "",
+        severity: "success"
+    });
+
+    const { data: cartItems, loading, error, refetch } = useFetch("https://e-commerce-backend-two-mu.vercel.app/products/inCart");
+
+    const handleSnackbarClose = () => {
+        setSnackbar(prev => ({ ...prev, open: false }));
+    };
+
+    const handleMoveToWishlist = async (productId) => {
+        setLoadingStates(prev => ({ ...prev, [productId]: true }));
+        
+        try {
+            // First add to wishlist
+            const wishlistResponse = await fetch(
+                `https://e-commerce-backend-two-mu.vercel.app/products/${productId}/wishlist`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ isWishlisted: true }),
+                }
+            );
+
+            if (!wishlistResponse.ok) {
+                throw new Error("Failed to add to wishlist");
+            }
+
+            // Then remove from cart
+            const cartResponse = await fetch(
+                `https://e-commerce-backend-two-mu.vercel.app/products/${productId}/cart`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ isAddedToCart: false }),
+                }
+            );
+
+            if (!cartResponse.ok) {
+                throw new Error("Failed to remove from cart");
+            }
+
+            setSnackbar({
+                open: true,
+                message: "Product moved to wishlist",
+                severity: "success"
+            });
+
+            await refetch();
+        } catch (error) {
+            setSnackbar({
+                open: true,
+                message: error.message || "Failed to move item to wishlist",
+                severity: "error"
+            });
+        } finally {
+            setLoadingStates(prev => ({ ...prev, [productId]: false }));
+        }
+    };
+
+    const handleRemoveFromCart = async (productId) => {
+        setLoadingStates(prev => ({ ...prev, [productId]: true }));
+        
+        try {
+            const response = await fetch(
+                `https://e-commerce-backend-two-mu.vercel.app/products/${productId}/cart`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ isAddedToCart: false }),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to remove from cart");
+            }
+
+            const result = await response.json();
+            
+            setSnackbar({
+                open: true,
+                message: result.message || "Product removed from cart",
+                severity: "success"
+            });
+
+            await refetch();
+        } catch (error) {
+            setSnackbar({
+                open: true,
+                message: error.message || "Failed to remove item from cart",
+                severity: "error"
+            });
+        } finally {
+            setLoadingStates(prev => ({ ...prev, [productId]: false }));
+        }
+    };
 
     const calculatePriceDetails = () => {
         if (!cartItems || !Array.isArray(cartItems)) {
@@ -123,13 +231,25 @@ export default function Cart() {
                                                 <Button
                                                     variant="outlined"
                                                     color="error"
+                                                    onClick={() => handleRemoveFromCart(item._id)}
+                                                    disabled={loadingStates[item._id]}
                                                 >
-                                                    Remove From Cart
+                                                    {loadingStates[item._id] ? (
+                                                        <CircularProgress size={24} />
+                                                    ) : (
+                                                        "Remove From Cart"
+                                                    )}
                                                 </Button>
                                                 <Button
                                                     variant="outlined"
+                                                    onClick={() => handleMoveToWishlist(item._id)}
+                                                    disabled={loadingStates[item._id]}
                                                 >
-                                                    Move to Wishlist
+                                                    {loadingStates[item._id] ? (
+                                                        <CircularProgress size={24} />
+                                                    ) : (
+                                                        "Move to Wishlist"
+                                                    )}
                                                 </Button>
                                             </Box>
                                         </div>
@@ -143,7 +263,7 @@ export default function Cart() {
                                     variant="contained" 
                                     color="primary"
                                     sx={{ mt: 2 }}
-                                    href="/products"
+                                    onClick={() => navigate('/products')}
                                 >
                                     Continue Shopping
                                 </Button>
@@ -202,6 +322,22 @@ export default function Cart() {
                     </div>
                 </div>
             </main>
+
+            {/* Feedback Snackbar */}
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={handleSnackbarClose}
+                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+            >
+                <Alert 
+                    onClose={handleSnackbarClose} 
+                    severity={snackbar.severity}
+                    sx={{ width: '100%' }}
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </>
     );
 }
