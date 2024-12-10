@@ -1,21 +1,4 @@
-// import { useState, useEffect } from "react";
-// const useFetch = (url, initialData) => {
-//   const [data, setData] = useState(initialData);
-//   const [loading, setLoading] = useState(false);
-//   const [error, setError] = useState(null);
-//   useEffect(() => {
-//     setLoading(true);
-//     fetch(url)
-//       .then((res) => res.json())
-//       .then((data) => {
-//         setData(data);
-//       })
-//       .catch((error) => setError(error.message))
-//       .finally(() => setLoading(false));
-//   }, [url]);
-//   return { data, loading, error };
-// };
-// export default useFetch;
+// useFetch.js
 import { useState, useEffect, useCallback } from "react";
 
 const useFetch = (url) => {
@@ -26,15 +9,27 @@ const useFetch = (url) => {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null); // Clear any previous errors
+      
       const response = await fetch(url);
+      
       if (!response.ok) {
-        throw new Error("Failed to fetch data");
+        throw new Error(`Failed to fetch data. Status: ${response.status}`);
       }
+      
       const result = await response.json();
-      setData(result);
-      setError(null);
-    } catch (err) {
-      setError(err.message);
+      
+      // Handle both array and error responses
+      if (result.error) {
+        setData([]);  // Empty array for no items
+        setError(result.error);
+      } else {
+        setData(Array.isArray(result) ? result : []);
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+      setError(error.message);
+      setData([]);
     } finally {
       setLoading(false);
     }
@@ -44,13 +39,10 @@ const useFetch = (url) => {
     fetchData();
   }, [fetchData]);
 
-  // Refetch function that can either fetch fresh data or update with provided data
   const refetch = async (updatedData) => {
     if (updatedData) {
-      // If data is provided, update the state directly
       setData(updatedData);
     } else {
-      // Otherwise, fetch fresh data from the API
       await fetchData();
     }
   };

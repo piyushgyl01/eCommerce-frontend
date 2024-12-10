@@ -123,7 +123,6 @@ export default function Homepage() {
               />
             </div>
             <div className="col-md-2"></div>
-            <Link to="/products/checkout">Checkout</Link>
           </div>
         </main>
       </div>
