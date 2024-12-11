@@ -938,9 +938,14 @@ export default function ProductListing() {
                     </Link>
                   </div>
                   <div className="card-body">
-                    <Typography variant="h6" gutterBottom>
-                      {product.productName}
-                    </Typography>
+                    <Link
+                      className="text-decoration-none text-dark"
+                      to={`/products/${product.productName}/${product._id}`}
+                    >
+                      <Typography variant="h6" gutterBottom>
+                        {product.productName}
+                      </Typography>{" "}
+                    </Link>
                     <Typography variant="h6" color="text.primary">
                       ₹{product.productPrice}
                     </Typography>
